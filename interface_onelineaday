@@ -16,26 +16,28 @@ class DailyReflection():
 
     def update_entry(self, entry):
         if isinstance(entry, str):
+            if '\t' in entry:
+                self.entry.replace('\t','  ')
             self.entry = entry
         else:
             print("This is an invalid entry type")
             raise TypeError
 
     def save_entry(self):
-        entry_line = "{},{}".format(str(self.entry_date,self.entry))
-        with open('myjournalentries.txt') as f:
-            f.write(entry_line)
+        entry_line = "{}\t{}".format(str(self.entry_date),self.entry)
+        with open('myjournalentries.txt','a') as f:
+            f.write('\n' + str(entry_line))
 
 
 def verify(user_input, input_type):
-    print('eri')
     if isinstance(user_input, str):
         if input_type == 'yes_no':
             user_input = user_input.upper()
             if user_input == 'Y' or user_input == 'N':
                 user_input = user_input
             else:
-                user_input = False
+                print("Invalid response. Y/N?")
+                user_input = verify(input(), 'yes_no')
         elif input_type == 'date':
             user_input = datetime.datetime.strptime(user_input,'%Y-%m-%d').date()
         return user_input
@@ -47,6 +49,7 @@ def verify(user_input, input_type):
 def save_flow(user_save):
     if user_save:
         if user_save == 'Y':
+            dailyref.save_entry()
             print("Your entry has been saved.")
         elif user_save == 'N':
             prompt_user("Y")
@@ -71,7 +74,7 @@ def prompt_user(response):
         print("Write your entry here. Please write at least three sentences for optimal sentiment analysis:")
         user_entry = verify(input(), 'sentence')
         dailyref.update_entry(user_entry)
-        print("Your entry for {} is: {}. Do you want to save? Y/N".format(dailyref.entry_date,dailyref.entry))
+        print("Your entry for {} is: \"{}\". \nDo you want to save? Y/N".format(dailyref.entry_date,dailyref.entry))
         user_save = verify(input(), 'yes_no')
         save_flow(user_save)
     elif response == 'N':
