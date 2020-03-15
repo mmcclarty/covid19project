@@ -1,5 +1,6 @@
 import datetime
 import pandas as pd
+from pandas import errors
 
 
 class DailyReflection():
@@ -29,6 +30,7 @@ class DailyReflection():
         if is_dup == True:
             self.dataframe.loc[self.dataframe[0] == str(self.entry_date), 1] = self.entry
             print(self.dataframe)
+            self.dataframe.to_csv('myjournalentries.txt',sep='\t',header=None,mode='w')
         else:
             # If there is no duplication or replacement, just append a line
             entry_line = "{}\t{}".format(str(self.entry_date),self.entry)
@@ -38,8 +40,11 @@ class DailyReflection():
 
 class EntriesDB():
     def __init__(self):
-        self.df_all_entries = pd.read_csv("myjournalentries.txt",sep='\t',header=None)
-        print(self.df_all_entries[0])
+        try:
+            self.df_all_entries = pd.read_csv("myjournalentries.txt",sep='\t',header=None)
+        except errors.EmptyDataError:
+            self.df_all_entries = pd.DataFrame(columns=[0,1])
+        print(self.df_all_entries)
 
     def get_date_entry(self, user_date):
         is_date = self.df_all_entries.loc[self.df_all_entries[0] == str(user_date)]
