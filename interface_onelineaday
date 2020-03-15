@@ -1,10 +1,12 @@
 import datetime
+import pandas as pd
 
 
 class DailyReflection():
     def __init__(self):
         self.entry_date = datetime.date.today()
         self.entry = ''
+        self.dataframe = entries_db.df_all_entries
 
     def update_date(self, entry_date):
         print(type(entry_date))
@@ -23,13 +25,29 @@ class DailyReflection():
             print("This is an invalid entry type")
             raise TypeError
 
-    def save_entry(self):
-        entry_line = "{}\t{}".format(str(self.entry_date),self.entry)
-        with open('myjournalentries.txt','a') as f:
-            f.write('\n' + str(entry_line))
+    def save_entry(self, is_dup):
+        if is_dup == True:
+            self.dataframe.loc[self.dataframe[0] == str(self.entry_date), 1] = self.entry
+            print(self.dataframe)
+        else:
+            # If there is no duplication or replacement, just append a line
+            entry_line = "{}\t{}".format(str(self.entry_date),self.entry)
+            with open('myjournalentries.txt','a') as f:
+                f.write('\n' + str(entry_line))
+
+
+class EntriesDB():
+    def __init__(self):
+        self.df_all_entries = pd.read_csv("myjournalentries.txt",sep='\t',header=None)
+        print(self.df_all_entries[0])
+
+    def get_date_entry(self, user_date):
+        is_date = self.df_all_entries.loc[self.df_all_entries[0] == str(user_date)]
+        return is_date
 
 
 def verify(user_input, input_type):
+    print("ero")
     if isinstance(user_input, str):
         if input_type == 'yes_no':
             user_input = user_input.upper()
@@ -39,29 +57,32 @@ def verify(user_input, input_type):
                 print("Invalid response. Y/N?")
                 user_input = verify(input(), 'yes_no')
         elif input_type == 'date':
-            user_input = datetime.datetime.strptime(user_input,'%Y-%m-%d').date()
+            try:
+                user_input = datetime.datetime.strptime(user_input,'%Y-%m-%d').date()
+            except:
+                raise TypeError
         return user_input
     else:
         print("Invalid entry type!")
         raise TypeError
 
 
-def save_flow(user_save):
-    if user_save:
-        if user_save == 'Y':
-            dailyref.save_entry()
-            print("Your entry has been saved.")
-        elif user_save == 'N':
-            prompt_user("Y")
+def save_flow(user_save, is_dup):
+    if user_save == 'Y':
+        dailyref.save_entry(is_dup)
+        print("Your entry has been saved.")
+    elif user_save == 'N':
+        prompt_user("Y")
 
 
 def date_flow(user_date, bad_entry_count):
     try:
         user_date = verify(user_date,'date')
+        dailyref.update_date(user_date)
     except TypeError:
         if bad_entry_count >= 3:
             print("Too many bad attempts, closing application.")
-            exit()
+            return False
         bad_entry_count += 1
         print("Invalid date format. Please enter date in format YYYY-MM-DD:")
         date_flow(input(), bad_entry_count)
@@ -69,33 +90,43 @@ def date_flow(user_date, bad_entry_count):
         return user_date
 
 
-def prompt_user(response):
+def check_for_dups(response, already_there):
+    print("For {} you have already saved value \"{}\".\n"
+            "Overwrite? Y/N".format(already_there[0].iloc[0],already_there[1].iloc[0]))
+    return verify(input(), 'yes_no')
+
+
+def prompt_user(response, is_dup):
     if response == 'Y':
         print("Write your entry here. Please write at least three sentences for optimal sentiment analysis:")
         user_entry = verify(input(), 'sentence')
         dailyref.update_entry(user_entry)
         print("Your entry for {} is: \"{}\". \nDo you want to save? Y/N".format(dailyref.entry_date,dailyref.entry))
         user_save = verify(input(), 'yes_no')
-        save_flow(user_save)
+        save_flow(user_save, is_dup)
     elif response == 'N':
-        print("Do you want to write a question for another day? Y/N".format(dailyref.entry_date))
+        print("Do you want to write a reflection for another day? Y/N".format(dailyref.entry_date))
         response = verify(input(), 'yes_no')
         if response == 'N':
             print("Goodbye!")
             exit()
         else:
             print("Enter the date you want to write the entry for in format YYYY-MM-DD:")
-            user_date = input()
-            user_date = date_flow(user_date, 0)
-            dailyref.update_date(user_date)
-            prompt_user("Y")
+            date_flow(input(), 0)
+            prompt_user("Y", is_dup)
 
 
 if __name__ == "__main__":
+    entries_db = EntriesDB()
     dailyref = DailyReflection()
+    already_there = entries_db.get_date_entry(dailyref.entry_date)
     print("Hello, do you want to write a reflection for {}? Y/N".format(dailyref.entry_date))
-    response = verify(input(), 'yes_no')
-    prompt_user(response)
+    dups_response = verify(input(), 'yes_no')
+    is_dup = False
+    if dups_response == 'Y' and len(already_there) > 0:
+        dups_response = check_for_dups(dups_response, already_there)
+        is_dup = True
+    prompt_user(dups_response, is_dup)
 
 
 
