@@ -1,0 +1,103 @@
+import datetime
+
+
+class DailyReflection():
+    def __init__(self):
+        self.entry_date = datetime.date.today()
+        self.entry = ''
+
+    def update_date(self, entry_date):
+        print(type(entry_date))
+        if isinstance(entry_date, datetime.date):
+            self.entry_date = entry_date
+        else:
+            print("That is an invalid date.")
+            raise TypeError
+
+    def update_entry(self, entry):
+        if isinstance(entry, str):
+            self.entry = entry
+        else:
+            print("This is an invalid entry type")
+            raise TypeError
+
+    def save_entry(self):
+        entry_line = "{},{}".format(str(self.entry_date,self.entry))
+        with open('myjournalentries.txt') as f:
+            f.write(entry_line)
+
+
+def verify(user_input, input_type):
+    print('eri')
+    if isinstance(user_input, str):
+        if input_type == 'yes_no':
+            user_input = user_input.upper()
+            if user_input == 'Y' or user_input == 'N':
+                user_input = user_input
+            else:
+                user_input = False
+        elif input_type == 'date':
+            user_input = datetime.datetime.strptime(user_input,'%Y-%m-%d').date()
+        return user_input
+    else:
+        print("Invalid entry type!")
+        raise TypeError
+
+
+def save_flow(user_save):
+    if user_save:
+        if user_save == 'Y':
+            print("Your entry has been saved.")
+        elif user_save == 'N':
+            prompt_user("Y")
+
+
+def date_flow(user_date, bad_entry_count):
+    try:
+        user_date = verify(user_date,'date')
+    except TypeError:
+        if bad_entry_count >= 3:
+            print("Too many bad attempts, closing application.")
+            exit()
+        bad_entry_count += 1
+        print("Invalid date format. Please enter date in format YYYY-MM-DD:")
+        date_flow(input(), bad_entry_count)
+    finally:
+        return user_date
+
+
+def prompt_user(response):
+    if response == 'Y':
+        print("Write your entry here. Please write at least three sentences for optimal sentiment analysis:")
+        user_entry = verify(input(), 'sentence')
+        dailyref.update_entry(user_entry)
+        print("Your entry for {} is: {}. Do you want to save? Y/N".format(dailyref.entry_date,dailyref.entry))
+        user_save = verify(input(), 'yes_no')
+        save_flow(user_save)
+    elif response == 'N':
+        print("Do you want to write a question for another day? Y/N".format(dailyref.entry_date))
+        response = verify(input(), 'yes_no')
+        if response == 'N':
+            print("Goodbye!")
+            exit()
+        else:
+            print("Enter the date you want to write the entry for in format YYYY-MM-DD:")
+            user_date = input()
+            user_date = date_flow(user_date, 0)
+            dailyref.update_date(user_date)
+            prompt_user("Y")
+
+
+if __name__ == "__main__":
+    dailyref = DailyReflection()
+    print("Hello, do you want to write a reflection for {}? Y/N".format(dailyref.entry_date))
+    response = verify(input(), 'yes_no')
+    prompt_user(response)
+
+
+
+
+
+
+
+
