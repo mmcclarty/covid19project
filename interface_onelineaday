@@ -29,8 +29,7 @@ class DailyReflection():
     def save_entry(self, is_dup):
         if is_dup == True:
             self.dataframe.loc[self.dataframe[0] == str(self.entry_date), 1] = self.entry
-            print(self.dataframe)
-            self.dataframe.to_csv('myjournalentries.txt',sep='\t',header=None,mode='w')
+            self.dataframe.to_csv('myjournalentries.txt',sep='\t',header=None,index=False,mode='w')
         else:
             # If there is no duplication or replacement, just append a line
             entry_line = "{}\t{}".format(str(self.entry_date),self.entry)
@@ -43,11 +42,14 @@ class EntriesDB():
         try:
             self.df_all_entries = pd.read_csv("myjournalentries.txt",sep='\t',header=None)
         except errors.EmptyDataError:
-            self.df_all_entries = pd.DataFrame(columns=[0,1])
+            self.df_all_entries = pd.DataFrame()
         print(self.df_all_entries)
 
     def get_date_entry(self, user_date):
-        is_date = self.df_all_entries.loc[self.df_all_entries[0] == str(user_date)]
+        if len(self.df_all_entries) > 0:
+            is_date = self.df_all_entries.loc[self.df_all_entries[0] == str(user_date)]
+        else:
+            is_date = pd.Series([])
         return is_date
 
 
